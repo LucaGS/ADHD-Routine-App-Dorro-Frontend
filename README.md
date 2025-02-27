@@ -57,7 +57,7 @@ After starting the application, you can navigate through the following screens:
 ## Screenshots
 
 ![Main Screen](./assets/Main.png)
-![Routine Screen](./assets/Rotuine.png)
+![Routine Screen](./assets/Routine.png)
 ![Session Screen](./assets/Session.png)
 
 
