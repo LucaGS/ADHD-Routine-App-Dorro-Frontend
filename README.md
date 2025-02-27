@@ -58,9 +58,9 @@ After starting the application, you can navigate through the following screens:
 
 ## Screenshots
 
-![Welcome Screen](./assets/screenshots/welcome.png)
-![Login Screen](./assets/screenshots/login.png)
-![Main Screen](./assets/screenshots/main.png)
+![Main Screen](./assets/Main.png)
+![Routine.png](./assets/screenshots/Rotuine.png)
+![Session.png](./assets/screenshots/Session.png)
 
 ## Contributing
 
