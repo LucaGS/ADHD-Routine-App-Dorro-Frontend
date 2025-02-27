@@ -14,9 +14,9 @@ ADHD-Routine-App-Dorro is a mobile application designed to help users manage the
 
 - User authentication (Login and Signup)
 - Create and manage routines
-- Add and track activities within routines
+- Add activities within routines
+- Run Routine Sessions
 - User-friendly interface with a modern design
-- Dark mode support
 
 ## Installation
 
