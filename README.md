@@ -59,25 +59,15 @@ After starting the application, you can navigate through the following screens:
 ## Screenshots
 
 ![Main Screen](./assets/Main.png)
-![Routine.png](./assets/screenshots/Rotuine.png)
-![Session.png](./assets/screenshots/Session.png)
+![Routine Screen](./assets/Rotuine.png)
+![Session Screen](./assets/Session.png)
 
-## Contributing
 
-Contributions are welcome! If you would like to contribute to the project, please follow these steps:
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes and commit them (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Open a pull request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-Your Name - [your.email@example.com](mailto:your.email@example.com)
+Your Name - Luca Stieme
+E-mail - luca.stieme@outlook.de
 
-Project Link: [https://github.com/yourusername/dorroo](https://github.com/yourusername/dorroo)
+
