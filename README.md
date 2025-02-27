@@ -1,6 +1,6 @@
-# Dorroo
+# ADHD-Routine-App-Dorro
 
-Dorroo is a mobile application designed to help users manage their routines and activities efficiently. The app allows users to log in, create routines, and track their activities seamlessly.
+ADHD-Routine-App-Dorro is a mobile application designed to help users manage their routines and activities efficiently. The app allows users to log in, create routines, and run sessions.
 
 ## Table of Contents
 
