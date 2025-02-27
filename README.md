@@ -26,12 +26,12 @@ To get started with the project, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/dorroo.git
+   git clone https://github.com/LucaGS/ADHD-Routine-App-Dorro-Frontend.git
    ```
 
 2. Navigate into the project directory:
    ```bash
-   cd dorroo
+   cd ADHD-Routine-App-Dorro-Frontend
    ```
 
 3. Install the dependencies:
@@ -43,12 +43,14 @@ To get started with the project, follow these steps:
    ```bash
    npm start
    ```
+4. Connect device:
+  follow console instructions
 
 ## Usage
 
 After starting the application, you can navigate through the following screens:
 
-- **Welcome Screen**: Introduction to the app.
+- **Welcome Screen**: Introduction to the app, can navigate to .
 - **Login Screen**: Users can log in to their accounts.
 - **Signup Screen**: New users can create an account.
 - **Main Screen**: Users can view and manage their routines.
