@@ -64,8 +64,7 @@ After starting the application, you can navigate through the following screens:
 
 
 ## Contact
-
-Your Name - Luca Stieme
+Luca Stieme
 E-mail - luca.stieme@outlook.de
 
 
