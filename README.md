@@ -1,6 +1,6 @@
-# Dorroo
+# ADHD-Routine-App-Dorro
 
-Dorroo is a mobile application designed to help users manage their routines and activities efficiently. The app allows users to log in, create routines, and track their activities seamlessly.
+ADHD-Routine-App-Dorro is a mobile application designed to help users manage their routines and activities efficiently. The app allows users to log in, create routines, and run sessions.
 
 ## Table of Contents
 
@@ -8,17 +8,15 @@ Dorroo is a mobile application designed to help users manage their routines and 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Screenshots](#screenshots)
-- [Contributing](#contributing)
-- [License](#license)
 - [Contact](#contact)
 
 ## Features
 
 - User authentication (Login and Signup)
 - Create and manage routines
-- Add and track activities within routines
+- Add activities within routines
+- Run Routine Sessions
 - User-friendly interface with a modern design
-- Dark mode support
 
 ## Installation
 
@@ -58,26 +56,15 @@ After starting the application, you can navigate through the following screens:
 
 ## Screenshots
 
-![Welcome Screen](./assets/screenshots/welcome.png)
-![Login Screen](./assets/screenshots/login.png)
-![Main Screen](./assets/screenshots/main.png)
+![Main Screen](./assets/Main.png)
+![Routine Screen](./assets/Routine.png)
+![Session Screen](./assets/Session.png)
 
-## Contributing
 
-Contributions are welcome! If you would like to contribute to the project, please follow these steps:
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes and commit them (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Open a pull request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contact
+Luca Stieme
+E-mail - luca.stieme@outlook.de
 
-Your Name - [your.email@example.com](mailto:your.email@example.com)
 
-Project Link: [https://github.com/yourusername/dorroo](https://github.com/yourusername/dorroo)
