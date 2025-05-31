@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
 import { BackendUrl } from '../constants';
 import { Audio } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 //implement https://www.npmjs.com/package/react-native-sound
 const StartedRoutineSession = ({ route, navigation }) => {
     const [sound, setSound] = useState();
@@ -39,12 +40,30 @@ const StartedRoutineSession = ({ route, navigation }) => {
         
         setLoading(true);
         try {
-            const response = await fetch(`${BackendUrl}?action=ListRoutineActivitys&routine_id=${routineId}`);
+            const token = await AsyncStorage.getItem('token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+           
+            const response = await fetch(`${BackendUrl}/api/v1/Activity/routine/${routineId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
-                console.log('Fetched Activities:', data); // Log the fetched data
-                if (data && Array.isArray(data.data)) {
-                    setActivities(data.data);
+                console.log('Fetched Activities:', data);
+                if (Array.isArray(data)) {
+                    // Map the response to match the expected format
+                    const mappedActivities = data.map(activity => ({
+                        activity_id: activity.id,
+                        activity_name: activity.name,
+                        activity_description: activity.description,
+                        duration: activity.duration,
+                        position: activity.position
+                    }));
+                    setActivities(mappedActivities);
                 } else {
                     setError('Invalid response format');
                 }
@@ -145,7 +164,6 @@ const StartedRoutineSession = ({ route, navigation }) => {
                 <View style={styles.activityItem}>
                     <Text style={styles.activityName}>{currentActivity.activity_name}</Text>
                     <Text style={styles.activityDescription}>{currentActivity.activity_description}</Text>
-                    <Text style={styles.activityDetail}>Points: {currentActivity.points}</Text>
                     <Text style={styles.timerText}>Time Remaining: {remainingTime} seconds</Text>
                     <View style={styles.progressBar}>
                         <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -159,7 +177,7 @@ const StartedRoutineSession = ({ route, navigation }) => {
                         <Button 
                             title="Finish Routine" 
                             onPress={handleFinishRoutine}
-                            color="#FF6B6B" // Adding a different color to distinguish it
+                            color="#FF6B6B"
                         />
                     </View>
                 </View>
@@ -212,10 +230,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#e0e0e0',
         marginBottom: 5,
-    },
-    activityDetail: {
-        fontSize: 14,
-        color: '#888',
     },
     timerText: {
         fontSize: 16,

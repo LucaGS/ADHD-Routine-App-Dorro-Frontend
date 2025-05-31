@@ -21,7 +21,7 @@ const ActivityItem = ({ item, drag, isActive, index }) => (
             <Text style={styles.activityDescription}>{item.activity_description}</Text>
             <View style={styles.activityDetails}>
                 <Text style={styles.activityDetail}>Duration: {item.duration}min</Text>
-                <Text style={styles.activityDetail}>Points: {item.points}</Text>
+                <Text style={styles.activityDetail}>Position: {item.position}</Text>
             </View>
         </TouchableOpacity>
     </ScaleDecorator>

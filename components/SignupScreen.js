@@ -1,67 +1,64 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
-import { BackendUrl } from '../constants'; // Ensure BackendUrl is defined
-import 'react-native-gesture-handler'; // Add this import
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BackendUrl } from '../constants';
+import 'react-native-gesture-handler';
 
 const SignupScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [userId, setUserId] = useState('');
   const [userExists, setUserExists] = useState(false);
 
-  const handleSignup = () => {
-    if (password === confirmPassword) {
-      console.log('Username:', username);
-      console.log('Email:', email);
-      console.log('Password:', password);
-      fetch(`${BackendUrl}?action=RegisterUser`, {
+  const handleSignup = async () => {
+    if (password !== confirmPassword) {
+      console.log('Passwörter stimmen nicht überein');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BackendUrl}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&email=${encodeURIComponent(email)}`
-      })
-        .then((response) => {
-          if (response.status === 409) {
-            // User already exists
-            setUserExists(true);
-            return null; // Return null to avoid processing further
-          }
-          return response.json(); // Convert the response to JSON
+        body: JSON.stringify({
+          firstname,
+          lastname,
+          email,
+          password
         })
-        .then((data) => {
-          if (data && data.data && data.data.userid) { // Check for expected fields
-            setUserId(data.data.userid); // Correct key is 'userid'
-            console.log('User ID:', data.data.userid);
+      });
 
-            // Store userId in AsyncStorage
-            AsyncStorage.setItem('userId', data.data.userid.toString())
-              .then(() => {
-                console.log('User ID saved to AsyncStorage:', data.data.userid);
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Main' }],
-                });
-              })
-              .catch((error) => {
-                console.error('Error saving user ID to AsyncStorage:', error);
-              });
-            
-            setUserExists(false); // Reset userExists on success
-          } else {
-            console.error('Unexpected API response:', data);
-            setUserExists(true); // Set userExists if data is missing or incorrect
-          }
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-          setUserExists(true); // Handle network or server errors
+      if (response.status === 409) {
+        setUserExists(true);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Registration failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.token) {
+        // Store the JWT token
+        await AsyncStorage.setItem('token', data.token);
+        console.log('Token saved successfully: ', data.token);
+        
+        // Navigate to Main screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
         });
-    } else {
-      console.log('Passwörter stimmen nicht überein');
+      } else {
+        setUserExists(true);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setUserExists(true);
     }
   };
 
@@ -73,9 +70,16 @@ const SignupScreen = ({ navigation }) => {
       )}
       <TextInput
         style={styles.input}
-        placeholder="Benutzername"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Vorname"
+        value={firstname}
+        onChangeText={setFirstname}
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Nachname"
+        value={lastname}
+        onChangeText={setLastname}
         autoCapitalize="none"
       />
       <TextInput

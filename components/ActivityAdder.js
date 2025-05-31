@@ -1,6 +1,7 @@
 import { View, Text, Alert, StyleSheet, TextInput, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { useState, useEffect } from 'react';
 import { BackendUrl } from '../constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -10,22 +11,61 @@ const ActivityAdder = ({ onClose, routineId, onActivityAdded }) => {
     const [activityDescription, setActivityDescription] = useState('');
     const [position, setPosition] = useState('');
     const [duration, setDuration] = useState('');
-    const [minDuration, setMinDuration] = useState('');
-    const [points, setPoints] = useState('');
 
     // Add function to fetch current activity count
     const fetchCurrentPosition = async () => {
         try {
-            const response = await fetch(`${BackendUrl}?action=ListRoutineActivitys&routine_id=${routineId}`);
+            const token = await AsyncStorage.getItem('token');
+            console.log('ActivityAdder - Retrieved token:', token ? 'Token exists' : 'No token found');
+            
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            // Ensure token is properly formatted
+            const cleanToken = token.trim();
+            console.log('ActivityAdder - Token length:', cleanToken.length);
+            console.log('ActivityAdder - Token format check:', cleanToken.startsWith('eyJ') ? 'Valid JWT format' : 'Invalid JWT format');
+
+            const url = `${BackendUrl}/api/v1/Activity/routine/${routineId}`;
+            console.log('ActivityAdder - Fetching from URL:', url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${cleanToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            console.log('ActivityAdder - Fetch response status:', response.status);
+            const responseText = await response.text();
+            console.log('ActivityAdder - Raw response:', responseText);
+
+            if (response.status === 403) {
+                console.log('ActivityAdder - Token might be expired or invalid');
+                Alert.alert('Error', 'Authentication failed. Please try logging in again.');
+                return;
+            }
+
             if (response.ok) {
-                const data = await response.json();
-                if (data && Array.isArray(data.data)) {
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    console.log('ActivityAdder - Parsed data:', data);
+                } catch (e) {
+                    console.error('ActivityAdder - Error parsing response:', e);
+                    return;
+                }
+
+                if (Array.isArray(data)) {
                     // Set position to next available number
-                    setPosition((data.data.length).toString());
+                    setPosition((data.length + 1).toString());
                 }
             }
         } catch (error) {
-            console.error('Error fetching position:', error);
+            console.error('ActivityAdder - Error fetching position:', error);
         }
     };
 
@@ -52,50 +92,104 @@ const ActivityAdder = ({ onClose, routineId, onActivityAdded }) => {
         }
 
         try {
-            console.log('Making API request to:', `${BackendUrl}?action=addActivity`);
-            const requestBody = `activity_name=${encodeURIComponent(activityName)}
-            &activity_description=${encodeURIComponent(activityDescription)}
-            &routine_id=${encodeURIComponent(routineId)}
-            &position=${encodeURIComponent(position)}
-            &duration=${encodeURIComponent(duration)}
-            &min_duration=${encodeURIComponent(minDuration)}
-            &points=${encodeURIComponent(points)}`;
-            console.log('Request body:', requestBody);
+            const token = await AsyncStorage.getItem('token');
+            console.log('ActivityAdder - Retrieved token for POST:', token ? 'Token exists' : 'No token found');
+            
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
 
-            const response = await fetch(`${BackendUrl}?action=addActivity`, {
+            // Ensure token is properly formatted
+            const cleanToken = token.trim();
+            console.log('ActivityAdder - Token length:', cleanToken.length);
+            console.log('ActivityAdder - Token format check:', cleanToken.startsWith('eyJ') ? 'Valid JWT format' : 'Invalid JWT format');
+
+            const url = `${BackendUrl}/api/v1/Activity`;
+            console.log('ActivityAdder - Making API request to:', url);
+
+            const requestBody = {
+                routineId: parseInt(routineId),
+                name: activityName,
+                description: activityDescription,
+                duration: duration ? parseInt(duration) : 0,
+                position: position ? parseInt(position) : 1
+            };
+            console.log('ActivityAdder - Request body:', requestBody);
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Bearer ${cleanToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                body: requestBody
+                body: JSON.stringify(requestBody)
             });
 
-            console.log('Response status:', response.status);
+            console.log('ActivityAdder - Response status:', response.status);
             const responseText = await response.text();
-            console.log('Response text:', responseText);
+            console.log('ActivityAdder - Raw response:', responseText);
+
+            if (response.status === 403) {
+                // Token might be expired or invalid
+                console.log('ActivityAdder - Token might be expired or invalid, attempting to refresh...');
+                // Try to get a new token from AsyncStorage
+                const newToken = await AsyncStorage.getItem('token');
+                if (newToken && newToken !== token) {
+                    console.log('ActivityAdder - New token found, retrying request...');
+                    // Retry the request with the new token
+                    const retryResponse = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${newToken.trim()}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    if (retryResponse.ok) {
+                        const retryData = await retryResponse.json();
+                        handleSuccessfulAdd(retryData);
+                        return;
+                    }
+                }
+                Alert.alert('Error', 'Authentication failed. Please try logging in again.');
+                return;
+            }
 
             if (response.ok) {
-                console.log('Activity added successfully');
-                Alert.alert('Success', 'Activity added successfully');
-                // Reset all fields
-                setActivityName('');
-                setActivityDescription('');
-                setPosition('');
-                setDuration('');
-                setMinDuration('');
-                setPoints('');
-                if (onActivityAdded) {
-                    await onActivityAdded(); // This will update the count in parent
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                    console.log('ActivityAdder - Response data:', responseData);
+                    handleSuccessfulAdd(responseData);
+                } catch (e) {
+                    console.error('ActivityAdder - Error parsing response:', e);
+                    Alert.alert('Error', 'Failed to parse server response');
                 }
-                onClose();
             } else {
                 console.log('Failed to add activity:', responseText);
-                Alert.alert('Error', 'Failed to add activity');
+                Alert.alert('Error', 'Failed to add activity: ' + responseText);
             }
         } catch (error) {
             console.error('Error in handleAddActivity:', error);
-            Alert.alert('Error', 'Something went wrong');
+            Alert.alert('Error', 'Something went wrong: ' + error.message);
         }
+    };
+
+    const handleSuccessfulAdd = (responseData) => {
+        console.log('Activity added successfully');
+        Alert.alert('Success', 'Activity added successfully');
+        // Reset all fields
+        setActivityName('');
+        setActivityDescription('');
+        setPosition('');
+        setDuration('');
+        if (onActivityAdded) {
+            onActivityAdded(); // This will update the count in parent
+        }
+        onClose();
     };
 
     return (
@@ -141,8 +235,6 @@ const ActivityAdder = ({ onClose, routineId, onActivityAdded }) => {
                     />
                 </View>
 
-                
-
                 <View style={styles.inputContainer}>
                     <Text style={styles.label}>Duration (minutes)</Text>
                     <TextInput
@@ -152,40 +244,6 @@ const ActivityAdder = ({ onClose, routineId, onActivityAdded }) => {
                         placeholder="Enter duration"
                         placeholderTextColor="#888"
                         keyboardType="numeric"
-                    />
-                </View>
-
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Minimum Duration (minutes)</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={minDuration}
-                        onChangeText={setMinDuration}
-                        placeholder="Enter minimum duration"
-                        placeholderTextColor="#888"
-                        keyboardType="numeric"
-                    />
-                </View>
-
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Points</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={points}
-                        onChangeText={(text)=>{
-                            const numValue = parseInt(text);
-                            if(text === '' || (numValue >= 0 && numValue <= 10)){
-                                setPoints(text);
-                            }else{
-                                alert("you can only give 1-10 points for an activity");
-                            }
-
-                        }}
-                        placeholder="Enter points(1-10)"
-                        placeholderTextColor="#888"
-                        keyboardType="numeric"
-                        maxLength={2}
-
                     />
                 </View>
 

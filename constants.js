@@ -1,1 +1,1 @@
-export const BackendUrl = "https://dorro-j48i6.kinsta.app"
+export const BackendUrl = "https://spring-boot-production-3256.up.railway.app"

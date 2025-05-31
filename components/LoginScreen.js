@@ -9,53 +9,43 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(false); 
 
-  const handleLogin = () => {
-    console.log('Email:', email);
-    console.log('Password:', password);
-    fetch(`${BackendUrl}?action=LoginUser`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
-    })
-      .then((response) => {
-        console.log('Raw Response:', response);
-        return response.text(); // Antwort als Text verarbeiten
-      })
-      .then((text) => {
-        console.log('Raw Text:', text);
-        const jsonData = text ? JSON.parse(text) : {}; // JSON parsen, falls vorhanden
-        console.log('Parsed JSON:', jsonData);
-        return jsonData;
-      })
-      .then((data) => {
-        // Extrahiere userId aus data-Objekt
-        if (data.status === 'success' && data.data?.UserId) {
-          console.log('Success:', data);
-          AsyncStorage.setItem('userid', data.data.UserId.toString())
-            .then(() => {
-              console.log('User ID saved to AsyncStorage:', data.data.UserId);
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Main', params: { userId: data.data.UserId } }],
-              });
-              
-            })
-            .catch((error) => {
-              console.error('Error saving user ID to AsyncStorage:', error);
-            });
-        } else {
-          setLoginError(true);  
-          console.log('No user ID returned from login.');
-        }
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        setLoginError(true);
+  const handleLogin = async () => {
+    try {
+      const response = await fetch(`${BackendUrl}/api/v1/auth/authenticate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
       });
+
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.token) {
+        // Store the JWT token
+        await AsyncStorage.setItem('token', data.token);
+        console.log('Token saved successfully: ', data.token);
+        
+        // Navigate to Main screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        });
+      } else {
+        setLoginError(true);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError(true);
+    }
   };
-  
 
   return (
     <View style={styles.container}>
