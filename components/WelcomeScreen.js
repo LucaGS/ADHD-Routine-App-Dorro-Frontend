@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import 'react-native-gesture-handler'; // Add this import
+
 const WelcomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Logo oder Bild */}
       <Image 
-        source={{ uri: 'https://wallpaperaccess.com/full/86289.jpg' }} 
+        source={require('../assets/icon.png')} 
         style={styles.logo} 
+        resizeMode="contain"
       />
       {/* Begrüßungstext */}
       <Text style={styles.title}>Willkommen!</Text>
@@ -42,10 +44,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: 200,
+    height: 200,
     marginBottom: 30,
-    borderRadius: 75,
   },
   title: {
     fontSize: 32,

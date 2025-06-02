@@ -218,46 +218,46 @@ const RoutineScreen = ({ route, navigation }) => {
                 contentContainerStyle={styles.activityListContent}
             />
 
-            <View style={styles.buttonContainer}>
-                {showActivityAdder ? (
+            {showActivityAdder ? (
+                <View style={styles.modalOverlay}>
                     <ActivityAdder 
                         onClose={() => setShowActivityAdder(false)}
                         routineId={routineId}
                         onActivityAdded={fetchRoutineDetails}
                     />
-                ) : (
-                    <>
-                        <TouchableOpacity 
-                            style={[styles.button, styles.addButton]}
-                            onPress={() => {
-                                console.log('Opening ActivityAdder for routine:', routineId);
-                                setShowActivityAdder(true);
-                            }}
-                        >
-                            <View style={styles.buttonContent}>
-                                <Text style={styles.buttonIcon}>+</Text>
-                                <Text style={styles.buttonText}>Add New Activity</Text>
-                            </View>
-                        </TouchableOpacity>
+                </View>
+            ) : (
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity 
+                        style={[styles.button, styles.addButton]}
+                        onPress={() => {
+                            console.log('Opening ActivityAdder for routine:', routineId);
+                            setShowActivityAdder(true);
+                        }}
+                    >
+                        <View style={styles.buttonContent}>
+                            <Text style={styles.buttonIcon}>+</Text>
+                            <Text style={styles.buttonText}>Add New Activity</Text>
+                        </View>
+                    </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            style={[styles.button, styles.startButton]}
-                            onPress={() => {
-                                console.log('Starting routine:', routineId);
-                                navigation.navigate('StartedRoutineSession', { 
-                                    routineId: routineId,
-                                    routineName: routineName
-                                });
-                            }}
-                        >
-                            <View style={styles.buttonContent}>
-                                <Text style={styles.buttonIcon}>▶</Text>
-                                <Text style={styles.buttonText}>Start Routine</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </>
-                )}
-            </View>
+                    <TouchableOpacity 
+                        style={[styles.button, styles.startButton]}
+                        onPress={() => {
+                            console.log('Starting routine:', routineId);
+                            navigation.navigate('StartedRoutineSession', { 
+                                routineId: routineId,
+                                routineName: routineName
+                            });
+                        }}
+                    >
+                        <View style={styles.buttonContent}>
+                            <Text style={styles.buttonIcon}>▶</Text>
+                            <Text style={styles.buttonText}>Start Routine</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 };
@@ -336,6 +336,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#888',
         marginTop: 5,
+    },
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
     },
 });
 
