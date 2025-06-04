@@ -27,7 +27,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Welcome Back!</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -75,34 +75,34 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 30,
+    marginBottom: 40,
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#333',
-    borderRadius: 8,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
     padding: 15,
     marginBottom: 15,
     color: '#fff',
   },
   button: {
     backgroundColor: '#6200EE',
+    borderRadius: 10,
     padding: 15,
-    borderRadius: 8,
+    alignItems: 'center',
     marginTop: 10,
   },
   buttonText: {
     color: '#fff',
-    textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
   },
   linkButton: {
     marginTop: 20,
+    alignItems: 'center',
   },
   linkText: {
     color: '#6200EE',
-    textAlign: 'center',
     fontSize: 16,
   },
 });

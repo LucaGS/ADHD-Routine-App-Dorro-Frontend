@@ -1,70 +1,71 @@
 import { BackendUrl } from '../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const createActivity = async (routineId, activityData) => {
+export const startRoutineSession = async (routineId) => {
     const token = await AsyncStorage.getItem('token');
     if (!token) {
         throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${BackendUrl}/api/v1/Activity`, {
+    const response = await fetch(`${BackendUrl}/api/v1/Session/start`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ routineId: parseInt(routineId) })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to start routine session');
+    }
+
+    return response.json();
+};
+
+export const completeActivity = async (sessionId, activityId) => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${BackendUrl}/api/v1/Session/complete-activity`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            routineId: parseInt(routineId),
-            ...activityData
+            sessionId: parseInt(sessionId),
+            activityId: parseInt(activityId)
         })
     });
 
     if (!response.ok) {
-        throw new Error('Failed to create activity');
+        throw new Error('Failed to complete activity');
     }
 
     return response.json();
 };
 
-export const updateActivity = async (activityId, activityData) => {
+export const endSession = async (sessionId) => {
     const token = await AsyncStorage.getItem('token');
     if (!token) {
         throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${BackendUrl}/api/v1/Activity/${activityId}`, {
-        method: 'PUT',
+    const response = await fetch(`${BackendUrl}/api/v1/Session/end`, {
+        method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(activityData)
+        body: JSON.stringify({ sessionId: parseInt(sessionId) })
     });
 
     if (!response.ok) {
-        throw new Error('Failed to update activity');
+        throw new Error('Failed to end session');
     }
 
     return response.json();
-};
-
-export const deleteActivity = async (activityId) => {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-        throw new Error('No authentication token found');
-    }
-
-    const response = await fetch(`${BackendUrl}/api/v1/Activity/${activityId}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to delete activity');
-    }
-
-    return true;
 }; 
