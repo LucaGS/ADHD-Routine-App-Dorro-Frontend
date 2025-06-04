@@ -1,86 +1,64 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BackendUrl } from '../constants';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { login } from '../services/authService';
 import 'react-native-gesture-handler'; 
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await fetch(`${BackendUrl}/api/v1/auth/authenticate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      
-      if (data.token) {
-        // Store the JWT token
-        await AsyncStorage.setItem('token', data.token);
-        console.log('Token saved successfully: ', data.token);
-        
-        // Navigate to Main screen
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        });
-      } else {
-        setLoginError(true);
-      }
+      await login(email, password);
+      navigation.replace('Main');
     } catch (error) {
-      console.error('Login error:', error);
-      setLoginError(true);
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Anmelden</Text>
+      <Text style={styles.title}>Welcome Back!</Text>
       <TextInput
         style={styles.input}
-        placeholder="email-adress"
+        placeholder="Email"
+        placeholderTextColor="#666"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
         autoCapitalize="none"
       />
-
       <TextInput
         style={styles.input}
-        placeholder="password"
+        placeholder="Password"
+        placeholderTextColor="#666"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Anmelden</Text>
-      </TouchableOpacity>
-
-      {loginError && ( 
-        <Text style={styles.errorText}>
-          Ungültiger Benutzername oder Passwort.
+      <TouchableOpacity 
+        style={styles.button}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Logging in...' : 'Login'}
         </Text>
-      )}
-
-      <TouchableOpacity
-        style={styles.linkContainer}
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={styles.linkButton}
         onPress={() => navigation.navigate('Signup')}
       >
-        <Text style={styles.link}>Noch kein Konto? Registrieren</Text>
+        <Text style={styles.linkText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
     </View>
   );
@@ -90,48 +68,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#121212',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
+    color: '#fff',
     marginBottom: 40,
-    color: '#343a40',
+    textAlign: 'center',
   },
   input: {
-    width: '100%',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
     padding: 15,
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
-    marginBottom: 20,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    marginBottom: 15,
+    color: '#fff',
   },
   button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    paddingHorizontal: 100, 
-    borderRadius: 8,
-    marginTop: 20,
+    backgroundColor: '#6200EE',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 20,
-  },
-  link: {
-    color: '#007bff',
     fontSize: 16,
+    fontWeight: 'bold',
   },
-  errorText: { 
-    color: 'red',
-    marginTop: 10,
+  linkButton: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#6200EE',
+    fontSize: 16,
   },
 });
 

@@ -1,116 +1,73 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BackendUrl } from '../constants';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { signup } from '../services/authService';
 import 'react-native-gesture-handler';
 
 const SignupScreen = ({ navigation }) => {
-  const [firstname, setFirstname] = useState('');
-  const [lastname, setLastname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [userExists, setUserExists] = useState(false);
+  const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (password !== confirmPassword) {
-      console.log('Passwörter stimmen nicht überein');
+    if (!email || !password || !username) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
+    setLoading(true);
     try {
-      const response = await fetch(`${BackendUrl}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstname,
-          lastname,
-          email,
-          password
-        })
-      });
-
-      if (response.status === 409) {
-        setUserExists(true);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-
-      const data = await response.json();
-      
-      if (data.token) {
-        // Store the JWT token
-        await AsyncStorage.setItem('token', data.token);
-        console.log('Token saved successfully: ', data.token);
-        
-        // Navigate to Main screen
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        });
-      } else {
-        setUserExists(true);
-      }
+      await signup(email, password, username);
+      navigation.replace('Main');
     } catch (error) {
-      console.error('Registration error:', error);
-      setUserExists(true);
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registrieren</Text>
-      {userExists && (
-        <Text style={styles.errorText}>Benutzer existiert bereits</Text>
-      )}
+      <Text style={styles.title}>Create Account</Text>
       <TextInput
         style={styles.input}
-        placeholder="Vorname"
-        value={firstname}
-        onChangeText={setFirstname}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Nachname"
-        value={lastname}
-        onChangeText={setLastname}
+        placeholder="Username"
+        placeholderTextColor="#666"
+        value={username}
+        onChangeText={setUsername}
         autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#666"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
         autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
-        placeholder="Passwort"
+        placeholder="Password"
+        placeholderTextColor="#666"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Passwort bestätigen"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>Registrieren</Text>
+      <TouchableOpacity 
+        style={styles.button}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Creating Account...' : 'Sign Up'}
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.linkContainer}
+      <TouchableOpacity 
+        style={styles.linkButton}
         onPress={() => navigation.navigate('Login')}
       >
-        <Text style={styles.link}>Bereits ein Konto? Anmelden</Text>
+        <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -120,48 +77,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#121212',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
+    color: '#fff',
     marginBottom: 40,
-    color: '#343a40',
+    textAlign: 'center',
   },
   input: {
-    width: '100%',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 10,
     padding: 15,
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
-    marginBottom: 20,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    marginBottom: 15,
+    color: '#fff',
   },
   button: {
-    backgroundColor: '#28a745',
-    paddingVertical: 15,
-    paddingHorizontal: 100,
-    borderRadius: 8,
-    marginTop: 20,
+    backgroundColor: '#6200EE',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 20,
-  },
-  link: {
-    color: '#007bff',
     fontSize: 16,
+    fontWeight: 'bold',
   },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
+  linkButton: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#6200EE',
+    fontSize: 16,
   },
 });
 

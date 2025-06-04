@@ -1,35 +1,44 @@
 import { View, Text, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
-import { BackendUrl } from '../constants';
 import ActivityAdder from './ActivityAdder';
 import ActivityItem from './ActivityItem';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchRoutineDetails, updateActivityPositions } from '../services/routineService';
 
 const RoutineScreen = ({ route, navigation }) => {
     const { routineId } = route.params || {};
-    const{routineName} = route.params ||{};
+    const { routineName } = route.params || {};
     const [activities, setActivities] = useState([]);
     const [activityCount, setActivityCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showActivityAdder, setShowActivityAdder] = useState(false);
+    const [token, setToken] = useState(null);
 
     useEffect(() => {
         console.log('RoutineScreen mounted with routineId:', routineId);
-        fetchRoutineDetails();
+        loadRoutineDetails();
     }, [routineId]);
     
     useEffect(() => {
+        const getToken = async () => {
+            const token = await AsyncStorage.getItem('token');
+            setToken(token);
+        };
+        getToken();
+    }, []);
+
+    useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             console.log('RoutineScreen focused, refreshing data');
-            fetchRoutineDetails();
+            loadRoutineDetails();
         });
 
         return unsubscribe;
     }, [navigation]);
 
-    const fetchRoutineDetails = async () => {
+    const loadRoutineDetails = async () => {
         if (!routineId) {
             setError('No routine ID provided');
             return;
@@ -37,79 +46,10 @@ const RoutineScreen = ({ route, navigation }) => {
     
         setLoading(true);
         try {
-            const token = await AsyncStorage.getItem('token');
-            console.log('Retrieved token:', token ? 'Token exists' : 'No token found');
-            
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-
-            // Ensure token is properly formatted
-            const cleanToken = token.trim();
-            console.log('Token length:', cleanToken.length);
-            console.log('Token format check:', cleanToken.startsWith('eyJ') ? 'Valid JWT format' : 'Invalid JWT format');
-
-            const url = `${BackendUrl}/api/v1/Activity/routine/${routineId}`;
-            console.log('Fetching from URL:', url);
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${cleanToken}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-
-            console.log('Fetch response status:', response.status);
-            console.log('Response headers:', JSON.stringify(response.headers));
-            
-            const responseText = await response.text();
-            console.log('Raw response:', responseText);
-
-            if (response.status === 403) {
-                // Token might be expired or invalid
-                console.log('Token might be expired or invalid, attempting to refresh...');
-                // Try to get a new token from AsyncStorage
-                const newToken = await AsyncStorage.getItem('token');
-                if (newToken && newToken !== token) {
-                    console.log('New token found, retrying request...');
-                    // Retry the request with the new token
-                    const retryResponse = await fetch(url, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${newToken.trim()}`,
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (retryResponse.ok) {
-                        const retryData = await retryResponse.json();
-                        handleSuccessfulResponse(retryData);
-                        return;
-                    }
-                }
-                setError('Authentication failed. Please try logging in again.');
-                return;
-            }
-
-            if (response.ok) {
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                    console.log('Parsed activities data:', data);
-                    handleSuccessfulResponse(data);
-                } catch (e) {
-                    console.error('Error parsing response:', e);
-                    setError('Invalid response format');
-                }
-            } else {
-                console.error('Error response:', responseText);
-                setError('Error fetching routine: ' + responseText);
-            }
+            const data = await fetchRoutineDetails(routineId);
+            handleSuccessfulResponse(data);
         } catch (error) {
-            console.error('Error in fetchRoutineDetails:', error);
+            console.error('Error in loadRoutineDetails:', error);
             setError('Error fetching routine: ' + error.message);
         } finally {
             setLoading(false);
@@ -118,7 +58,6 @@ const RoutineScreen = ({ route, navigation }) => {
 
     const handleSuccessfulResponse = (data) => {
         if (Array.isArray(data)) {
-            // Map the response to match the expected format
             const mappedActivities = data.map(activity => ({
                 activity_id: activity.id,
                 activity_name: activity.name,
@@ -134,46 +73,23 @@ const RoutineScreen = ({ route, navigation }) => {
             setError('Invalid response format');
         }
     };
-    
 
     const updatePositions = async (newActivities) => {
         try {
-            // Create an array of position updates
             const updates = newActivities.map((activity, index) => ({
                 id: activity.activity_id,
-                position: index + 1  // Make it 1-based to match backend
+                position: index + 1  
             }));
     
             console.log('Sending position updates:', updates);
-    
-            const response = await fetch(`${BackendUrl}/api/v1/Activity/positions`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    routineId: parseInt(routineId),
-                    positions: updates
-                })
-            });
-    
-            if (!response.ok) {
-                console.error('Failed to update positions:', response.status, response.statusText);
-                Alert.alert('Error', `Failed to update positions: ${response.statusText}`);
-                // Revert to original positions
-                fetchRoutineDetails();
-            } else {
-                // Refresh the activities list to ensure we have the correct order
-                fetchRoutineDetails();
-            }
+            await updateActivityPositions(routineId, updates, token);
+            loadRoutineDetails();
         } catch (error) {
             console.error('Error updating positions:', error);
             Alert.alert('Error', 'Failed to update positions');
-            // Revert to original positions on error
-            fetchRoutineDetails();
+            loadRoutineDetails();
         }
     };
-    
 
     const renderActivity = ({ item, drag, isActive, index }) => (
         <ActivityItem 
@@ -223,7 +139,7 @@ const RoutineScreen = ({ route, navigation }) => {
                     <ActivityAdder 
                         onClose={() => setShowActivityAdder(false)}
                         routineId={routineId}
-                        onActivityAdded={fetchRoutineDetails}
+                        onActivityAdded={loadRoutineDetails}
                     />
                 </View>
             ) : (
