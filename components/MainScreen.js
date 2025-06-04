@@ -5,6 +5,7 @@ import { BackendUrl } from '../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RoutineItem from './RoutineItem';
 import RoutineAdder from './RoutineAdder';
+import { fetchRoutines } from '../services/routineManagementService';
 
 const MainScreen = ({ navigation }) => {
     const [routines, setRoutines] = useState([]);
@@ -12,42 +13,29 @@ const MainScreen = ({ navigation }) => {
     const [error, setError] = useState(null);
     const [showRoutineAdder, setShowRoutineAdder] = useState(false);
 
-    const fetchRoutines = async () => {
+    const loadRoutines = async () => {
         setLoading(true);
         try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-
-            const response = await fetch(`${BackendUrl}/api/v1/Routine/all`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setRoutines(data);
-            } else {
-                const errorText = await response.text();
-                setError('Error fetching routines: ' + errorText);
-            }
+            const data = await fetchRoutines();
+            setRoutines(data);
         } catch (error) {
-            setError('Error fetching routines: ' + error.message);
+            setError(error.message);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchRoutines();
+        loadRoutines();
     }, []);
 
-    const refreshRoutines = () => {
-        fetchRoutines();
-    };
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadRoutines();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
 
     const renderAddButton = () => (
         <TouchableOpacity
@@ -58,6 +46,22 @@ const MainScreen = ({ navigation }) => {
         </TouchableOpacity>
     );
 
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -65,32 +69,26 @@ const MainScreen = ({ navigation }) => {
                 <LogoutButton />
             </View>
 
-            {error && <Text style={styles.errorText}>{error}</Text>}
-
-            {loading ? (
-                <Text>Loading routines...</Text>
-            ) : (
-                <View style={styles.content}>
-                    <FlatList
-                        data={routines}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderItem={({ item }) => (
-                            <RoutineItem
-                                routine={item}
-                                onPress={() => navigation.navigate('Routine', { routineId: item.id, routineName: item.name })}
-                            />
-                        )}
-                        ListFooterComponent={renderAddButton}
-                        contentContainerStyle={styles.listContent}
+            <FlatList
+                data={routines}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                    <RoutineItem
+                        routine={item}
+                        onPress={() => navigation.navigate('Routine', { routineId: item.id, routineName: item.name })}
                     />
-                </View>
-            )}
+                )}
+                ListFooterComponent={renderAddButton}
+                contentContainerStyle={styles.listContent}
+            />
 
             {showRoutineAdder && (
-                <RoutineAdder
-                    onClose={() => setShowRoutineAdder(false)}
-                    onRoutineAdded={refreshRoutines}
-                />
+                <View style={styles.modalOverlay}>
+                    <RoutineAdder
+                        onClose={() => setShowRoutineAdder(false)}
+                        onRoutineAdded={loadRoutines}
+                    />
+                </View>
             )}
         </View>
     );
@@ -145,6 +143,22 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
+    },
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    loadingText: {
+        color: '#fff',
+        textAlign: 'center',
+        marginTop: 20,
     },
 });
 

@@ -7,7 +7,10 @@ export const login = async (email, password) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({
+            email,
+            password
+        })
     });
 
     if (!response.ok) {
@@ -25,11 +28,15 @@ export const signup = async (email, password, username) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, username })
+        body: JSON.stringify({
+            email,
+            password,
+            username
+        })
     });
 
     if (!response.ok) {
-        throw new Error('Signup failed');
+        throw new Error('Registration failed');
     }
 
     const data = await response.json();

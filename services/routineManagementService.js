@@ -1,48 +1,44 @@
 import { BackendUrl } from '../constants';
 import { getToken } from './authService';
 
-export const createActivity = async (routineId, activityData) => {
+export const createRoutine = async (routineData) => {
     const token = await getToken();
-    const response = await fetch(`${BackendUrl}/api/v1/Activity`, {
+    const response = await fetch(`${BackendUrl}/api/v1/Routine`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            ...activityData,
-            routineId: parseInt(routineId)
-        })
+        body: JSON.stringify(routineData)
     });
 
     if (!response.ok) {
-        throw new Error('Failed to create activity');
+        throw new Error('Failed to create routine');
     }
 
     return response.json();
 };
 
-export const updateActivity = async (activityId, activityData) => {
+export const fetchRoutines = async () => {
     const token = await getToken();
-    const response = await fetch(`${BackendUrl}/api/v1/Activity/${activityId}`, {
-        method: 'PUT',
+    const response = await fetch(`${BackendUrl}/api/v1/Routine`, {
+        method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData)
+        }
     });
 
     if (!response.ok) {
-        throw new Error('Failed to update activity');
+        throw new Error('Failed to fetch routines');
     }
 
     return response.json();
 };
 
-export const deleteActivity = async (activityId) => {
+export const deleteRoutine = async (routineId) => {
     const token = await getToken();
-    const response = await fetch(`${BackendUrl}/api/v1/Activity/${activityId}`, {
+    const response = await fetch(`${BackendUrl}/api/v1/Routine/${routineId}`, {
         method: 'DELETE',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -51,7 +47,7 @@ export const deleteActivity = async (activityId) => {
     });
 
     if (!response.ok) {
-        throw new Error('Failed to delete activity');
+        throw new Error('Failed to delete routine');
     }
 
     return response.json();

@@ -15,59 +15,99 @@ const SignupScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
     try {
-      await signup(email, password, username);
-      navigation.replace('Main');
+      const response = await fetch(`${BackendUrl}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstname,
+          lastname,
+          email,
+          password
+        })
+      });
+
+      if (response.status === 409) {
+        setUserExists(true);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Registration failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.token) {
+        // Store the JWT token
+        await AsyncStorage.setItem('token', data.token);
+        console.log('Token saved successfully: ', data.token);
+        
+        // Navigate to Main screen
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        });
+      } else {
+        setUserExists(true);
+      }
     } catch (error) {
-      Alert.alert('Error', error.message);
-    } finally {
-      setLoading(false);
+      console.error('Registration error:', error);
+      setUserExists(true);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.title}>Registrieren</Text>
+      {userExists && (
+        <Text style={styles.errorText}>Benutzer existiert bereits</Text>
+      )}
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#666"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="Vorname"
+        value={firstname}
+        onChangeText={setFirstname}
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Nachname"
+        value={lastname}
+        onChangeText={setLastname}
         autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
         placeholder="Email"
-        placeholderTextColor="#666"
         value={email}
         onChangeText={setEmail}
-        keyboardType="email-address"
         autoCapitalize="none"
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#666"
+        placeholder="Passwort"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <TouchableOpacity 
-        style={styles.button}
-        onPress={handleSignup}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Creating Account...' : 'Sign Up'}
-        </Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Passwort bestätigen"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+      />
+      <TouchableOpacity style={styles.button} onPress={handleSignup}>
+        <Text style={styles.buttonText}>Registrieren</Text>
       </TouchableOpacity>
-      <TouchableOpacity 
-        style={styles.linkButton}
+      <TouchableOpacity
+        style={styles.linkContainer}
         onPress={() => navigation.navigate('Login')}
       >
-        <Text style={styles.linkText}>Already have an account? Login</Text>
+        <Text style={styles.link}>Bereits ein Konto? Anmelden</Text>
       </TouchableOpacity>
     </View>
   );
@@ -77,42 +117,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#121212',
+    backgroundColor: '#f8f9fa',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 40,
-    textAlign: 'center',
+    color: '#343a40',
   },
   input: {
-    backgroundColor: '#1E1E1E',
-    borderRadius: 10,
+    width: '100%',
     padding: 15,
-    marginBottom: 15,
-    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    marginBottom: 20,
+    fontSize: 16,
+    backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: '#6200EE',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: '#28a745',
+    paddingVertical: 15,
+    paddingHorizontal: 100,
+    borderRadius: 8,
+    marginTop: 20,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
   },
-  linkButton: {
+  linkContainer: {
     marginTop: 20,
-    alignItems: 'center',
   },
-  linkText: {
-    color: '#6200EE',
+  link: {
+    color: '#007bff',
     fontSize: 16,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
 });
 
